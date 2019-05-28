@@ -1,0 +1,29 @@
+{
+  "name": "group-defender",
+  "version": "1.0.0",
+  "description": "Polaris group defender",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Neztore",
+  "license": "MIT",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.3",
+    "node-fetch": "^2.6.0"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Neztore/group-defender.git"
+  },
+  "keywords": [
+    "Roblox",
+    "group",
+    "AA"
+  ],
+  "bugs": {
+    "url": "https://github.com/Neztore/group-defender/issues"
+  },
+  "homepage": "https://github.com/Neztore/group-defender#readme"
+}
