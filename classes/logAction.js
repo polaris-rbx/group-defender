@@ -1,23 +1,24 @@
 class Action {
   constructor (opt) {
     const {
-      username,
-      userId,
-      rank,
-      desc,
-      date,
-      action
+      actor,
+      description,
+      created,
+      actionType
     } = opt
 
-    this.username = username
-    this.userId = userId
-    this.rank = rank
-    this.desc = desc
-    this.date = new Date(date)
-    this.action = action
+    this.username = actor.user.username
+    this.userId = actor.user.userId
+    this.rank = actor.role.rank
+    this.rankName = actor.role.name
+
+    this.content = description
+    this.created = new Date(created)
+    this.actionType = actionType
+
   }
   get id() {
-    return this.date.getTime() + this.desc
+    return this.created.getTime() + this.userId + this.actionType
   }
 }
 module.exports = Action

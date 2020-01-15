@@ -49,7 +49,7 @@ class GroupDefender {
     for (let log of logs) {
       if (this.actions.has(log.userId)) {
         const old = this.actions.get(log.userId)
-        if (log.date.getTime() - old.first.date.getTime() > this.duration * 1000) {
+        if (log.created.getTime() - old.first.created.getTime() > this.duration * 1000) {
           // It's expired
           this.setDefault(log)
         } else {

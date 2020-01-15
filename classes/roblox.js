@@ -30,56 +30,46 @@ class Roblox {
   }
 
 
-  async getLog () {
-    const body = await this._getPage()
-    const $ = cheerio.load(body)
+  async getLog (opt) {
+    const body = await this._getPage(opt)
+    const rows = body.data
     const logs = []
 
-    const rows = $('.AuditLogContainer').find('.datarow')
-    if (rows.length ===0) {
-      throw new Error(`Failed to get audit log: Check permissions.`)
-    }
     for (let i = 0; i < rows.length; i++) {
-      const child = rows.eq(i)
-
-      // Person who did the action
-      const username = child.find('.username').text()
-      const userId = parseInt(child.find('.roblox-avatar-image').attr('data-user-id'), 10)
-      const rank = child.find('.Rank').text()
-
-      // Info about the action
-      const d = child.find('.Description')
-      const desc = d.text()
-      const date = util.getDate(child.find('.Date').text(), 'CT')
-      const action = Roblox.getAction(d)
-      const log = new LogAction({
-        username,
-        userId,
-        rank,
-        desc,
-        date,
-        action
-      })
+      const log = new LogAction(rows[i])
       logs.push(log)
     }
     return logs
   }
 
 
-  async _getPage () {
-    const res = await this.makeRequest(`https://www.roblox.com/Groups/Audit.aspx?groupid=${this.groupId}`)
-
-    if (res.status === 200) {
-      return res.text()
-
-    } else if (res.redirected) {
-
-      if (res.headers.get("location").includes('/Groups/Group.aspx?gid=')) {
-        throw new Error('No permission')
+  async _getPage (opt) {
+    let url = `https://groups.roblox.com/v1/groups/${this.groupId}/audit-log`;
+    if (opt) {
+      const keys = Object.keys(opt)
+      for (let i of keys) {
+        url = addQueryItem(url, i, opt[i])
       }
+    }
+    if (!url.includes("limit")) {
+      url = addQueryItem(url, "limit", 50)
+    }
 
+    let res = await this.makeRequest(url)
+    res = await res.json()
+    if (!res.errors) {
+      return res
     } else {
-      throw new Error('Unknown status code: ' + res.status)
+      if (res.errors && res.errors[0].message === "Authorization has been denied for this request." || res.errors[0].message === "Insufficient permissions to complete the request.") {
+        throw new Error(`Account does not have access to audit log of group ${this.groupId}`)
+      } else {
+        if (res.errors && res.errors[0].message) {
+          throw new Error(`Error returned: ${res.errors[0].message} for URL ${url}`)
+        } else {
+          console.log(res)
+          throw new Error(res)
+        }
+      }
     }
   }
 
@@ -101,14 +91,19 @@ class Roblox {
 
 
   async demote (userId) {
-    const [roleId, csrf] = await Promise.all([this.getRoleId(), this.getCsrf()])
+    const roleId = await this.getRoleId()
+    return await this.setRank(userId, roleId)
+  }
+
+  async setRank (userId, newRoleSetId) {
+    const csrf = await this.getCsrf()
     const url = `https://groups.roblox.com/v1/groups/${this.groupId}/users/${userId}`
 
     const headers = {
       'X-CSRF-TOKEN': csrf,
       'Content-Type': 'application/json'
     }
-    const body = JSON.stringify({ roleId: roleId })
+    const body = JSON.stringify({ roleId: newRoleSetId })
     const res = await this.makeRequest(url, {
       method: "PATCH",
       headers,
@@ -116,14 +111,14 @@ class Roblox {
     })
 
     if (res.ok) {
-      console.log(`Demoted ${userId} in Group ${this.groupId}`)
+      console.log(`Ranked ${userId} in Group ${this.groupId}`)
       return true
     } else {
       // Nope.
       try {
         const parsed = await res.json()
         if (parsed.errors[0].message) {
-          console.error(parsed.errors[0].message)
+          console.error(`Error: ${parsed.errors[0].message}`)
         } else {
           console.error(`${parsed.status}: Internal rank error`)
         }
@@ -184,3 +179,11 @@ class Roblox {
   }
 }
 module.exports = Roblox
+
+function  addQueryItem (string, item, value) {
+  if (!string.includes("?")) {
+    return `${string}?${item}=${value}`
+  } else {
+    return `${string}&${item}=${value}`
+  }
+}
