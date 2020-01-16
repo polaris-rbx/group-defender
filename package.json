@@ -1,6 +1,6 @@
 {
   "name": "group-defender",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Polaris group defender",
   "main": "index.js",
   "scripts": {
